@@ -34,14 +34,17 @@ def index():
     return "Hello, World!"
 
 
+# Register
 @app.route('/register', methods=['POST'])
 def register_user():
     email = request.json.get('email')
     password = request.json.get('password')
+
     if email is None or password is None:
-        abort(400) # missing arguments
+        return jsonify({'error': 'missing arguments'}), 400
     if Users.query.filter_by(email=email).first() is not None:
         abort(400) # existing user
+    
     user = Users(email=email)
     user.hash_password(password)
     db.session.add(user)
@@ -63,9 +66,11 @@ def get_auth_token():
 @auth.login_required
 def get_user(user_id):
     verify_current_user(user_id)
+
     lists = Lists.query.filter_by(user_id=user_id)
     user_info = {'owner': {'user_id': user_id}}
     lists_info = []
+
     for l in lists:
         list_info = {}
         list_info['list_id'] = l.id
@@ -73,6 +78,7 @@ def get_user(user_id):
         list_info['isprivate'] = l.isprivate
         lists_info.append(list_info)
     user_info['lists'] = lists_info
+
     return jsonify(user_info), 200
 
 
@@ -81,12 +87,15 @@ def get_user(user_id):
 @auth.login_required
 def create_list(user_id):
     verify_current_user(user_id)
+
     isprivate = request.json.get('isprivate')
     if isprivate is None:
         return jsonify({'error': 'Missing a parameter.'}), 400
+    
     new_list = Lists(user_id=user_id, isprivate=isprivate)
     db.session.add(new_list)
     db.session.commit()
+
     return jsonify({'list_id': new_list.id, 
                     'address': url_for('get_list', list_id=new_list.id), 
                     'isprivate': isprivate}), 201
@@ -97,18 +106,21 @@ def create_list(user_id):
 @auth.login_required
 def delete_list(user_id):
     verify_current_user(user_id)
+
     list_id = request.json.get('list_id')
     cur_list = Lists.query.filter_by(id=list_id).first()
     if not cur_list:
         return jsonify({'error': 'List does not exist.'}), 400
     db.session.delete(cur_list)
     relations = Relationships.query.filter_by(list_id=list_id).all()
+
     for relation in relations:
         if Relationships.query.filter_by(relation.book_id).count() == 1:
             book = Books.query.filter_by(id=book_id).first()
             db.session.delete(book)
         db.session.delete(relation)
     db.session.commit()
+
     return jsonify({'status': 'List successfully deleted.'}), 201
 
 
@@ -121,11 +133,13 @@ def get_list(list_id):
         return jsonify({'error': 'List does not exist.'}), 400
     if cur_list.isprivate:
         verify_current_user(cur_list.user_id)
+    
     relations = Relationships.query.filter_by(list_id=cur_list.id).all()
     list_info = {'list_info': {'list_id': list_id,
                                'user_id': cur_list.user_id,
                                'isprivate': cur_list.isprivate}}
     books_info = []
+
     for relation in relations:
         book = Books.query.filter_by(id=relation.book_id).first()
         book_info = {}
@@ -134,6 +148,7 @@ def get_list(list_id):
         book_info['author'] = book.author
         books_info.append(book_info)
     list_info['books'] = books_info
+    
     return jsonify(list_info), 200
 
 
@@ -143,6 +158,7 @@ def get_list(list_id):
 def add_book(list_id):
     cur_list = Lists.query.filter_by(id=list_id).first()
     verify_current_user(cur_list.user_id)
+
     book = Books.query.filter_by(isbn=request.json.get('isbn')).first()
     if not book:
         book = Books(isbn=request.json.get('isbn'),
@@ -167,12 +183,15 @@ def delete_book(list_id):
     cur_list = Lists.query.filter_by(id=list_id).first()
     verify_current_user(cur_list.user_id)
     book_id = request.json.get('book_id')
+
     relation = Relationships.query.filter(and_(Relationships.list_id == list_id,
                                           Relationships.book_id == book_id)).first()
     if not relation:
         return jsonify({'error': 'Book does not exist.'}), 400
     db.session.delete(relation)
     db.session.commit()
+
+    # if the book is not in any other lists, delete it
     if Relationships.query.filter_by(book_id=book_id).count() == 0:
         relations = Relationships.query.filter_by(book_id=book_id).all()
         for relation in relations:
@@ -187,6 +206,7 @@ def get_book(book_id):
     book = Books.query.filter_by(id=book_id).first()
     if not book:
         return jsonify({'error': 'Book does not exist.'}), 400
+
     book_info = {}
     book_info['book_id'] = book.id
     book_info['isbn'] = book.isbn
@@ -195,6 +215,7 @@ def get_book(book_id):
     book_info['category'] = book.category
     book_info['coverurl'] = book.coverurl
     book_info['summary'] = book.summary
+
     return jsonify(book_info), 200
 
 
@@ -209,6 +230,7 @@ def discover():
         list_info['address'] = url_for('discover_list', list_id=l.id)
         list_info['isprivate'] = l.isprivate
         lists_info.append(list_info)
+    
     return jsonify({'top_lists': lists_info}), 200
 
 
@@ -218,9 +240,11 @@ def discover_list(list_id):
     cur_list = Lists.query.filter_by(id=list_id).first()
     if not cur_list:
         return jsonify({'error': 'List does not exist.'}), 400
+
     relations = Relationships.query.filter_by(list_id=cur_list.id).all()
     list_info = {'list_info': {'list_id': list_id}}
     books_info = []
+
     for relation in relations:
         book = Books.query.filter_by(id=relation.book_id).first()
         book_info = {}
@@ -228,6 +252,7 @@ def discover_list(list_id):
         book_info['title'] = book.title
         book_info['author'] = book.author
         books_info.append(book_info)
+
     list_info['books'] = books_info
     return jsonify(list_info), 200
 
@@ -235,6 +260,7 @@ def discover_list(list_id):
 # Verify the current user
 def verify_current_user(id):
     user = Users.query.get(id)
+
     if not user:
         return jsonify({'error': 'User does not exist.'}), 400
     if user.id != g.user.id:
