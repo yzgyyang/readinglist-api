@@ -4,9 +4,12 @@ from passlib.apps import custom_app_context as pwd_context
 from itsdangerous import BadSignature, SignatureExpired
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 
+
 class Users(db.Model):
+    __tablename__ = 'users'
+
     id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(32), index=True)
+    email = db.Column(db.String, index=True)
     password_hash = db.Column(db.String(128))
     
     def hash_password(self, password):
@@ -29,3 +32,31 @@ class Users(db.Model):
             return None # invalid token
         user = Users.query.get(data['id'])
         return user
+
+
+class Lists(db.Model):
+    __tablename__ = 'lists'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer)
+    isprivate = db.Column(db.Boolean)
+
+
+class Books(db.Model):
+    __tablename__ = 'books'
+
+    id = db.Column(db.Integer, primary_key=True)
+    isbn = db.Column(db.String)
+    title = db.Column(db.String)
+    author = db.Column(db.String)
+    category = db.Column(db.String)
+    coverurl = db.Column(db.String)
+    summary = db.Column(db.String)
+
+
+class Relationships(db.Model):
+    __tablename__ = 'relationships'
+
+    id = db.Column(db.Integer, primary_key=True)
+    list_id = db.Column(db.Integer)
+    book_id = db.Column(db.Integer)
+
