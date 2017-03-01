@@ -7,6 +7,7 @@ import os
 ###############################################################################
 
 READING_LIST_DB_URL = 'mysql://build:build@localhost/readinglist?charset=utf8&use_unicode=0'
+SECRET_KEY = 'the quick brown fox jumps over the lazy dog'
 
 ###############################################################################
 # ENVIRONMENT
