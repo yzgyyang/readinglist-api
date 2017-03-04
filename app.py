@@ -116,7 +116,7 @@ def delete_list(user_id):
 
     for relation in relations:
         if Relationships.query.filter_by(relation.book_id).count() == 1:
-            book = Books.query.filter_by(id=book_id).first()
+            book = Books.query.filter_by(id=relation.book_id).first()
             db.session.delete(book)
         db.session.delete(relation)
     db.session.commit()
