@@ -258,7 +258,7 @@ with your token and properties of the book to be deleted:
 
 ```json
 {
-  “book_id”: 2
+  "book_id": 2
 }
 ```
 
