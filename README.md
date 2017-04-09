@@ -1,4 +1,4 @@
-# gotit-readinglist-api
+# readinglist-api
 A Reading List RESTful API, with Token Authenication
 
 To run the app in Debug mode:  
